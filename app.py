@@ -9,7 +9,7 @@ import numpy as np
 # -------------------------------
 root = Tk()
 root.title("Image Analyzer - Sobel Edge Detection")
-root.geometry("950x550")
+root.geometry("950x580")
 root.config(bg="#5E5E5E")
 
 IMG_WIDTH = 350
@@ -65,6 +65,55 @@ threshold_slider.place(x=390,y=470)
 threshold_slider.set(80)
 
 # -------------------------------
+# Image width and height slider
+# -------------------------------
+width_slider = Scale(
+    root,
+    from_=100,
+    to=800,
+    orient=HORIZONTAL,
+    label="Output Width",
+    length=150
+)
+width_slider.set(350)
+width_slider.place(x=180, y=470)
+
+height_slider = Scale(
+    root,
+    from_=100,
+    to=800,
+    orient=HORIZONTAL,
+    label="Output Height",
+    length=150
+)
+height_slider.set(350)
+height_slider.place(x=600, y=470)
+
+# -------------------------------
+# Reset image
+# -------------------------------
+def reset():
+    global original_img, generated_img
+
+    original_img = None
+    generated_img = None
+
+    left_label.config(image="", text="Original Image")
+    left_label.image = None
+
+    right_label.config(image="", text="Processed Image")
+    right_label.image = None
+
+    threshold_slider.set(80)
+
+    stats_label.config(
+        text="Detected edge pixels: -\n"
+             "Edge coverage: -\n"
+             "Threshold: -\n"
+             "Image size: -"
+    )
+
+# -------------------------------
 # Load Image
 # -------------------------------
 def load_image():
@@ -104,7 +153,12 @@ def generate_image():
         )
         return
 
-    gray = original_img.convert("L")
+    output_width = width_slider.get()
+    output_height = height_slider.get()
+
+    resized = original_img.resize((output_width, output_height))
+    gray = resized.convert("L")
+
     img_array = np.array(gray, dtype=float)
 
     Gx = np.array([
@@ -144,7 +198,9 @@ def generate_image():
     edge = edge.astype(np.uint8)
 
     generated_img = Image.fromarray(edge)
-    generated_tk = ImageTk.PhotoImage(generated_img)
+
+    display_img = generated_img.resize((IMG_WIDTH, IMG_HEIGHT))
+    generated_tk = ImageTk.PhotoImage(display_img)
 
     right_label.config(image=generated_tk, text="")
     right_label.image = generated_tk
@@ -221,6 +277,15 @@ save_button = Button(
     width=15
 )
 save_button.place(x=600, y=430)
+
+reset_button = Button(
+    root,
+    text="Reset",
+    command=reset,
+    font=("Arial", 12),
+    width=15
+)
+reset_button.place(x=390, y=540)
 
 # -------------------------------
 # Start Program
