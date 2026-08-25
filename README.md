@@ -15,4 +15,11 @@ The user interface is built using tkinter.
 5: Display edge statistics
 6: Save result
 ------------------------------------------------
-That's all, enjoy!
+## Attribution
+
+If you use this project or substantial portions of its code,
+please retain the original copyright notice and MIT License.
+
+Original author: 1usman1
+
+(That's all, enjoy!)
