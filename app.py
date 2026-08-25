@@ -1,3 +1,4 @@
+import time
 from tkinter import *
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
@@ -18,7 +19,7 @@ original_img = None
 generated_img = None
 
 # -------------------------------
-# Frames (optional structure)
+# Frames
 # -------------------------------
 left_frame = Frame(root, width=IMG_WIDTH, height=IMG_HEIGHT, bd=2, relief="solid", bg="gray")
 left_frame.place(x=30, y=30)
@@ -27,13 +28,42 @@ right_frame = Frame(root, width=IMG_WIDTH, height=IMG_HEIGHT, bd=2, relief="soli
 right_frame.place(x=550, y=30)
 
 # -------------------------------
-# Image placeholders (labels)
+# Image placeholders
 # -------------------------------
 left_label = Label(left_frame, text="Original Image", font=("Arial", 14))
 left_label.place(relx=0.5, rely=0.5, anchor="center")
 
 right_label = Label(right_frame, text="Processed Image", font=("Arial", 14))
 right_label.place(relx=0.5, rely=0.5, anchor="center")
+
+# -------------------------------
+# Statistics label under processed image
+# -------------------------------
+stats_label = Label(
+    root,
+    text="Detected edge pixels: -\nEdge coverage: -\nThreshold: -\nImage size: -",
+    font=("Arial", 11),
+    bg="#5E5E5E",
+    fg="white",
+    justify="left",
+    anchor="w"
+)
+stats_label.place(x=750, y=390)
+
+# -------------------------------
+# Threshold slider
+# -------------------------------
+threshold_slider = Scale(
+    root,
+    from_= 0,
+    to = 255,
+    orient=HORIZONTAL,
+    label="threshold",
+    length=138
+)
+threshold_slider.place(x=390,y=470)
+threshold_slider.set(80)
+
 # -------------------------------
 # Load Image
 # -------------------------------
@@ -56,13 +86,15 @@ def load_image():
 
     original_tk = ImageTk.PhotoImage(original_img)
 
-    left_label.config(image=original_tk)
+    left_label.config(image=original_tk, text="")
     left_label.image = original_tk
 
 # -------------------------------
 # Generate Sobel Edges
 # -------------------------------
 def generate_image():
+    start = time.perf_counter()
+
     global generated_img
 
     if original_img is None:
@@ -92,7 +124,6 @@ def generate_image():
 
     for y in range(1, height - 1):
         for x in range(1, width - 1):
-
             region = img_array[y-1:y+2, x-1:x+2]
 
             sx = np.sum(region * Gx)
@@ -105,18 +136,34 @@ def generate_image():
     if max_val > 0:
         edge = (edge / max_val) * 255
 
-    threshold = 80
+    # Threshold
+    threshold = threshold_slider.get()
     edge[edge < threshold] = 0
     edge[edge >= threshold] = 255
 
     edge = edge.astype(np.uint8)
 
     generated_img = Image.fromarray(edge)
-
     generated_tk = ImageTk.PhotoImage(generated_img)
 
-    right_label.config(image=generated_tk)
+    right_label.config(image=generated_tk, text="")
     right_label.image = generated_tk
+    end = time.perf_counter()
+    # -------------------------------
+    # Image statistics
+    # -------------------------------
+    edge_pixels = np.count_nonzero(edge == 255)
+    total_pixels = width * height
+    edge_coverage = (edge_pixels / total_pixels) * 100
+
+    stats_text = (
+        f"Detected edge pixels: {edge_pixels:,}\n"
+        f"Edge coverage: {edge_coverage:.1f}%\n"
+        f"Threshold: {threshold}\n"
+        f"Image size: {width} x {height}\n"
+        f"Process time: {(end - start)*1000}"
+    )
+    stats_label.config(text=stats_text)
 
 # -------------------------------
 # Save Result
